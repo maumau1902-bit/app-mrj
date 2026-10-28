@@ -1,0 +1,36 @@
+{
+  "name": "pulse-analytics",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "desktop": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --config electron-builder.cjs --win nsis --x64 --publish never",
+    "test": "node --test tests/*.test.cjs",
+    "release:win": "node scripts/verify-release.cjs && npm run build && electron-builder --config electron-builder.cjs --win nsis --x64 --publish never",
+    "postinstall": "patch-package --error-on-fail",
+    "verify:artifacts": "node scripts/verify-artifacts.cjs",
+    "test:differential": "node scripts/test-differential.cjs",
+    "test:desktop": "npm run build && node scripts/test-desktop.cjs",
+    "test:companies": "npm run build && node scripts/test-companies.cjs",
+    "publish:test": "npm test && npm run test:desktop && npm run test:companies && npm run dist:win && npm run verify:artifacts && node scripts/publish-test.cjs"
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "26.18.0",
+    "patch-package": "^8.0.1",
+    "playwright-core": "^1.64.1",
+    "vite": "^7.3.0"
+  },
+  "dependencies": {
+    "builder-util-runtime": "^9.7.0",
+    "electron-updater": "^6.8.11",
+    "yaml": "^2.9.1"
+  },
+  "main": "electron/main.cjs",
+  "description": "Painel de an\u00e1lise empresarial com integra\u00e7\u00e3o Mithra e atualiza\u00e7\u00f5es internas.",
+  "author": "Pulse Analytics"
+}

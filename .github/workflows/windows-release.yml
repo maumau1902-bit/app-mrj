@@ -1,0 +1,51 @@
+name: Windows installer
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  installer:
+    runs-on: windows-latest
+    env:
+      PULSE_PUBLISHER_NAME: ${{ vars.PULSE_PUBLISHER_NAME }}
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Match the tag to the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and package version must match' }
+      - run: npm test
+      - name: Build signed release or unsigned test installer
+        shell: pwsh
+        run: |
+          if ($env:PULSE_PUBLISHER_NAME -and $env:CSC_LINK -and $env:CSC_KEY_PASSWORD) {
+            npm run release:win
+          } else {
+            npm run dist:win
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run: npm run verify:artifacts
+      - name: Install, launch and uninstall on Windows
+        shell: pwsh
+        run: ./scripts/test-windows-installer.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pulse-analytics-windows
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+            release/screenshots/*.png
+          if-no-files-found: error
+# Artifacts are built for review. Publishing a GitHub Release is a separate deliberate step.
