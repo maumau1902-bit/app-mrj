@@ -10,6 +10,7 @@ async function main(){
  const artifact=await verifyArtifacts(path.join(root,'release'),pkg.version);
  const sourcePaths=['README.md','.gitignore','.github','build','electron','electron-builder.cjs','index.html','package.json','package-lock.json','patches','public','scripts','src','tests','vite.config.js'];
  git(['fetch','origin']);
+ git(['fetch','origin','refs/heads/pulse-downloads:refs/remotes/origin/pulse-downloads']);
  git(['add','--',...sourcePaths]);
  if(git(['diff','--cached','--name-only']))git(['-c','user.name=Pulse Analytics','-c','user.email=pulse-analytics@users.noreply.github.com','commit','-m',`Release Pulse Analytics ${pkg.version}`]);
  const sourceCommit=git(['rev-parse','HEAD']);
