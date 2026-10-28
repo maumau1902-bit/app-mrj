@@ -1,1 +1,2 @@
 04455aa2be0e6205a33e118f4b4a2b8b42bf25b1d86b3e114bcb85632e1f0bbb  Pulse-Analytics-Setup-0.1.1-x64.exe
+63a7243a182358c36724ccd48f01ceadf77fe73cfde67a128ac896f97c6e3519  Pulse-Analytics-Setup-0.2.0-x64.exe
