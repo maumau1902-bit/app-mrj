@@ -90,3 +90,9 @@ A chave privada foi gerada em /workspace/.pulse-signing/update-private.pem, fora
 O workflow Windows live update instala a base 0.3.0, usa o canal público para atualizar até a versão do checkout, confere o download/assinatura, o encerramento, a versão instalada, o reinício e a preservação da empresa selecionada. Só afirme que passou após observar o resultado do runner. O teste exige uma versão publicada superior a 0.3.0 no feed.
 
 A tentativa de guardar uma cópia da chave em GitHub Actions Secrets foi recusada pela integração (403). A chave privada original permanece no diretório privado deste ambiente; não alegue que há backup no GitHub. Preserve o arquivo ao publicar o snapshot do ambiente e faça backup por um canal seguro. A chave pública permanece no repositório.
+
+## Homologação do canal ativo
+
+Validado no Windows em 04/11/2026: instalação da base 0.3.0, consulta do catálogo público assinado, download da 0.3.1 dentro do app, conferência, instalação silenciosa, reinício automático e preservação da empresa cadastrada/selecionada. Resultado success no workflow Windows live update: https://github.com/maumau1902-bit/app-mrj/actions/runs/41855507453 (commit f04393e3dba85cef8c98903f73af45de3695c46b). O teste normalizou o recurso Windows de quatro partes (0.3.1.0) para a versão semântica (0.3.1); não alterou o aplicativo para fazer o teste passar.
+
+O workflow de atualização agora roda automaticamente em novas tags, exceto na versão-base 0.3.0, além da execução manual. A publicação disponibiliza a nova versão e o teste comprova o ciclo real usando o mesmo canal público. Em novas versões, aguarde o resultado antes de afirmar homologação no Windows.

@@ -2,11 +2,12 @@ name: Windows live update
 on:
   workflow_dispatch:
   push:
-    tags: ['v0.3.1']
+    tags: ['v*']
 permissions:
   contents: read
 jobs:
   update:
+    if: github.event_name == 'workflow_dispatch' || github.ref_name != 'v0.3.0'
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
