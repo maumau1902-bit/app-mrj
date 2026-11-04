@@ -18,7 +18,7 @@ try {
  do {
   Start-Sleep -Milliseconds 500
   $running = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -eq $exe } catch { $false } })
-  if ((Test-Path $exe) -and ((Get-Item $exe).VersionInfo.ProductVersion -eq $version) -and $running.Count -gt 0) { $restarted = $true; break }
+  if ((Test-Path $exe) -and (([version](Get-Item $exe).VersionInfo.ProductVersion).ToString(3) -eq $version) -and $running.Count -gt 0) { $restarted = $true; break }
  } while ((Get-Date) -lt $deadline)
  if (!$restarted) { throw 'A versão nova não foi instalada/reaberta no prazo.' }
  $running | Stop-Process -Force
