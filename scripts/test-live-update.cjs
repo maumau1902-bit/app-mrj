@@ -2,9 +2,11 @@
 const{_electron}=require('playwright-core');const assert=require('node:assert/strict');const pkg=require('../package.json');
 async function main(){
  const[exe,phase]=process.argv.slice(2);if(process.platform!=='win32'||process.env.RUNNER_ENVIRONMENT!=='github-hosted')throw new Error('Use o runner Windows descartável');
+ const diagnostics=[];let page;
  const app=await _electron.launch({executablePath:exe,args:[],timeout:30000});let closed=false;app.on('close',()=>closed=true);
+ for(const stream of [app.process().stdout,app.process().stderr])stream?.on('data',data=>{diagnostics.push(data.toString());if(diagnostics.length>40)diagnostics.shift()});
  try{
-  const page=await app.firstWindow();await page.getByRole('heading',{name:'Seu negócio em foco.'}).waitFor();
+  page=await app.firstWindow();await page.getByRole('heading',{name:'Seu negócio em foco.'}).waitFor();
   if(phase==='verify'){
    assert.equal((await page.evaluate(()=>window.pulseDesktop.updates.getState())).currentVersion,pkg.version);
    assert.equal(await page.getByRole('tab',{name:'Empresa preservada CI',exact:true}).getAttribute('aria-selected'),'true');
@@ -16,10 +18,15 @@ async function main(){
   await page.waitForFunction(()=>window.pulseDesktop.updates.getState().then(s=>s.status==='available'),null,{timeout:60000});
   const before=await page.evaluate(()=>window.pulseDesktop.updates.getState());assert.equal(before.currentVersion,'0.3.0');assert.equal(before.availableVersion,pkg.version);
   await page.getByRole('button',{name:'Baixar atualização',exact:true}).first().click();
-  await page.waitForFunction(()=>window.pulseDesktop.updates.getState().then(s=>s.status==='downloaded'),null,{timeout:240000});
+  await page.waitForFunction(()=>window.pulseDesktop.updates.getState().then(s=>['downloaded','error'].includes(s.status)),null,{timeout:240000});
+  assert.equal((await page.evaluate(()=>window.pulseDesktop.updates.getState())).status,'downloaded');
   const finished=app.waitForEvent('close',{timeout:60000});
   await page.getByRole('button',{name:'Instalar e reiniciar',exact:true}).first().click();await finished;
   console.log('PASS: assinatura/catálogo públicos, aviso, download real e encerramento para instalação pelo app.');
+ }catch(error){
+  let state;try{state=await page.evaluate(()=>window.pulseDesktop.updates.getState())}catch{}
+  const detail=(error.message+' STATE '+JSON.stringify(state)+' LOG '+diagnostics.join('').slice(-10000)).replace(/https?:\/\/[^\s]+/g,'[update-url]').replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A');
+  console.log('::error title=Update diagnostics::'+detail);throw error;
  }finally{if(!closed)await app.close()}
 }
 main().catch(e=>{console.error(e);process.exitCode=1});
