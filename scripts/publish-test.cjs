@@ -8,6 +8,7 @@ const git=(args,input)=>command('git',args,input);
 const gh=(args,input)=>command('gh',args,input,true);
 async function main(){
  const artifact=await verifyArtifacts(path.join(root,'release'),pkg.version);
+ const signedCatalog=await require('./sign-update.cjs').signUpdate();
  const sourcePaths=['README.md','.gitignore','.github','build','electron','electron-builder.cjs','index.html','package.json','package-lock.json','patches','public','scripts','src','tests','vite.config.js'];
  git(['fetch','origin']);
  git(['fetch','origin','refs/heads/pulse-downloads:refs/remotes/origin/pulse-downloads']);
@@ -25,11 +26,11 @@ async function main(){
  const parent=git(['rev-parse','refs/remotes/origin/pulse-downloads']);
  const entries=new Map(git(['ls-tree',parent]).split('\n').filter(Boolean).map(line=>[line.split('\t')[1],line]));
  const download=`https://github.com/${repo}/raw/refs/heads/pulse-downloads/${artifact.filename}`;
- const notes=`Pulse Analytics ${pkg.version} — versão de teste para Windows 10/11 x64.\n\n[Baixar instalador](${download})\n\nAbas para cadastrar, editar e alternar empresas. Nome, identificação, cidade/UF, identificador Mithra, observações e logo próprios. A empresa selecionada permanece ao reabrir. Novas empresas começam sem dados; a demonstração pode ser ativada no cadastro.\n\nDados salvos neste dispositivo; login e conexão real ao Mithra ainda pendentes. Instalador sem assinatura digital; Windows pode indicar editor desconhecido. Atualização remota permanece desativada neste pacote de teste. Instale sobre a versão anterior, mantendo o perfil do aplicativo.\n\nValidados: testes unitários, desktop Electron, quatro empresas, persistência, isolamento de logos e resoluções de tela. A instalação desta versão ainda precisa de teste no Windows.\n\nSHA-256: ${artifact.sha256}\n`;
+ const notes=`Pulse Analytics ${pkg.version} — versão de teste para Windows 10/11 x64.\n\n[Baixar instalador](${download})\n\nAbas para cadastrar, editar e alternar empresas. Nome, identificação, cidade/UF, identificador Mithra, observações e logo próprios. A empresa selecionada permanece ao reabrir. Novas empresas começam sem dados; a demonstração pode ser ativada no cadastro.\n\nDados salvos neste dispositivo; login e conexão real ao Mithra ainda pendentes. Instalador sem assinatura digital; Windows pode indicar editor desconhecido. Atualização interna ativada: catálogo Ed25519 assinado, SHA-512, aviso ao abrir, download, adiamento e instalação com reinício. A assinatura das atualizações é independente de Authenticode; o Windows ainda pode indicar editor desconhecido. Instale sobre a versão anterior, mantendo o perfil do aplicativo.\n\nValidados: testes unitários, desktop Electron, quatro empresas, persistência, isolamento de logos e resoluções de tela. A instalação desta versão ainda precisa de teste no Windows.\n\nSHA-256: ${artifact.sha256}\n`;
  const checksumName='SHA256SUMS.txt';
  const previous=git(['show',parent+':'+checksumName]);
  const sums=previous.split('\n').filter(line=>line&&!line.endsWith('  '+artifact.filename));sums.push(`${artifact.sha256}  ${artifact.filename}`);
- const documents=new Map([[artifact.filename,pointer],['.gitattributes','*.exe filter=lfs diff=lfs merge=lfs -text\n'],['README.md','# Pulse Analytics — downloads\n\n'+notes],['SHA256SUMS.txt',sums.join('\n')+'\n']]);
+ const documents=new Map([[artifact.filename,pointer],['.gitattributes','*.exe filter=lfs diff=lfs merge=lfs -text\n'],['README.md','# Pulse Analytics — downloads\n\n'+notes],['pulse-latest.json',signedCatalog],[`pulse-${pkg.version}.json`,signedCatalog],[artifact.filename+'.blockmap',fs.readFileSync(installer+'.blockmap')],['SHA256SUMS.txt',sums.join('\n')+'\n']]);
  for(const [name,content]of documents){const blob=git(['hash-object','-w','--stdin'],content);entries.set(name,`100644 blob ${blob}\t${name}`)}
  const tree=git(['mktree'],[...entries].sort(([a],[b])=>a.localeCompare(b,'en')).map(([,line])=>line+'\n').join(''));
  const commit=git(['-c','user.name=Pulse Analytics','-c','user.email=pulse-analytics@users.noreply.github.com','commit-tree',tree,'-p',parent],`Publish installer ${pkg.version}\n`);

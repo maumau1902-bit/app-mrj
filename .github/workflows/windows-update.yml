@@ -1,0 +1,20 @@
+name: Windows live update
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  update:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Update installed application from public signed feed
+        shell: pwsh
+        run: ./scripts/test-windows-update.ps1

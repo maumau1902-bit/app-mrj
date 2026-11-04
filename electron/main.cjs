@@ -1,10 +1,9 @@
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const fs = require('node:fs');
-const { parse } = require('yaml');
 const { CancellationToken } = require('builder-util-runtime');
-const { autoUpdater } = require('electron-updater');
+const { SignedNsisUpdater } = require('./signed-provider.cjs');
+const publicKey = require('./update-public-key.cjs');
 const { UpdateController } = require('./update-controller.cjs');
 const { updatePolicy } = require('./update-policy.cjs');
 
@@ -14,14 +13,7 @@ const entryFile = path.join(__dirname, '..', 'dist', 'index.html');
 const entryURL = pathToFileURL(entryFile).href;
 let window;
 let updates;
-function currentUpdatePolicy() {
-  let config;
-  if (app.isPackaged && process.platform === 'win32') {
-    try { config = parse(fs.readFileSync(path.join(process.resourcesPath, 'app-update.yml'), 'utf8')); }
-    catch { /* A missing or malformed feed keeps updates disabled. */ }
-  }
-  return updatePolicy({ packaged: app.isPackaged, platform: process.platform, config });
-}
+function currentUpdatePolicy() { return updatePolicy({packaged:app.isPackaged,platform:process.platform,publicKey}); }
 function createWindow() {
   window = new BrowserWindow({ title: 'Pulse Analytics', width: 1366, height: 800,
     minWidth: 960, minHeight: 640, backgroundColor: '#f7f6f4', autoHideMenuBar: true,
@@ -45,7 +37,7 @@ else {
       ...details.responseHeaders,
       'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'"]
     } }));
-    updates = new UpdateController(autoUpdater, { version: app.getVersion(), ...currentUpdatePolicy(), tokenFactory: () => new CancellationToken() });
+    updates = new UpdateController((process.platform === 'win32' ? new SignedNsisUpdater() : require('electron-updater').autoUpdater), { version: app.getVersion(), ...currentUpdatePolicy(), tokenFactory: () => new CancellationToken() });
     updates.on('state', state => { if (window && !window.isDestroyed()) window.webContents.send('updates:changed', state); });
     const handlers = { state: () => updates.snapshot(), check: () => updates.check(), download: () => updates.download(), cancel: () => updates.cancel(), install: () => updates.install() };
     for (const [action, handler] of Object.entries(handlers)) ipcMain.handle(`updates:${action}`, event => {

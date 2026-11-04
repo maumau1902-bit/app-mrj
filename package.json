@@ -1,6 +1,6 @@
 {
   "name": "pulse-analytics",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -31,6 +31,6 @@
     "yaml": "^2.9.1"
   },
   "main": "electron/main.cjs",
-  "description": "Painel de an\u00e1lise empresarial com integra\u00e7\u00e3o Mithra e atualiza\u00e7\u00f5es internas.",
+  "description": "Painel de análise empresarial com integração Mithra e atualizações internas.",
   "author": "Pulse Analytics"
 }
