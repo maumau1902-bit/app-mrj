@@ -88,3 +88,5 @@ A chave privada foi gerada em /workspace/.pulse-signing/update-private.pem, fora
 `node scripts/sign-update.cjs` assina e verifica os artefatos. A publicação inclui pulse-latest.json e pulse-<versão>.json, mais os blockmaps e o instalador. O app consulta o catálogo público por HTTPS, sem tokens. A publicação deve manter a identidade e o perfil do app. Versões 0.2.0 e anteriores exigem instalar manualmente a nova base uma vez.
 
 O workflow Windows live update instala a base 0.3.0, usa o canal público para atualizar até a versão do checkout, confere o download/assinatura, o encerramento, a versão instalada, o reinício e a preservação da empresa selecionada. Só afirme que passou após observar o resultado do runner. O teste exige uma versão publicada superior a 0.3.0 no feed.
+
+A tentativa de guardar uma cópia da chave em GitHub Actions Secrets foi recusada pela integração (403). A chave privada original permanece no diretório privado deste ambiente; não alegue que há backup no GitHub. Preserve o arquivo ao publicar o snapshot do ambiente e faça backup por um canal seguro. A chave pública permanece no repositório.

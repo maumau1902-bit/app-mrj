@@ -24,6 +24,7 @@ async function main() {
     assert.equal(state.currentVersion,pkg.version);
     assert.equal(await page.evaluate(()=>window.pulseDesktop.updates.install()),false);
     if(!installed) assert.equal(state.status,'disabled');
+    else assert.notEqual(state.status,'disabled','Atualizador deve estar habilitado no Windows instalado.');
     assert.match(await page.locator('.version-tag').innerText(),new RegExp(pkg.version.replaceAll('.','\\.')));
     assert.deepEqual(errors,[]);
     if(process.env.GITHUB_ACTIONS==='true'){
