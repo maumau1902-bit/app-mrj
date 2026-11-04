@@ -1,5 +1,15 @@
 // Executed only by the disposable Windows runner, against actual installed packages.
 const{_electron}=require('playwright-core');const assert=require('node:assert/strict');const pkg=require('../package.json');
+async function waitStatus(page,desired,timeout){
+ const deadline=Date.now()+timeout;
+ while(Date.now()<deadline){
+  const state=await page.evaluate(()=>window.pulseDesktop.updates.getState());
+  if(desired.includes(state.status))return state;
+  if(state.status==='error')throw new Error('Atualizador entrou em erro');
+  await new Promise(resolve=>setTimeout(resolve,250));
+ }
+ throw new Error('Atualizador não chegou ao estado '+desired.join('/'));
+}
 async function main(){
  const[exe,phase]=process.argv.slice(2);if(process.platform!=='win32'||process.env.RUNNER_ENVIRONMENT!=='github-hosted')throw new Error('Use o runner Windows descartável');
  const diagnostics=[];let page;
@@ -15,10 +25,10 @@ async function main(){
   await page.locator('.company-switcher [data-new-company]').click();await page.getByLabel('Nome na aba *',{exact:true}).fill('Empresa preservada CI');await page.getByRole('button',{name:'Salvar empresa',exact:true}).click();
   await page.locator('[data-page="Atualizações"]').click();
   await page.evaluate(async()=>{await window.pulseDesktop.updates.check()});
-  await page.waitForFunction(()=>window.pulseDesktop.updates.getState().then(s=>s.status==='available'),null,{timeout:60000});
+  await waitStatus(page,['available'],60000);
   const before=await page.evaluate(()=>window.pulseDesktop.updates.getState());assert.equal(before.currentVersion,'0.3.0');assert.equal(before.availableVersion,pkg.version);
   await page.getByRole('button',{name:'Baixar atualização',exact:true}).first().click();
-  await page.waitForFunction(()=>window.pulseDesktop.updates.getState().then(s=>['downloaded','error'].includes(s.status)),null,{timeout:240000});
+  await waitStatus(page,['downloaded'],240000);
   assert.equal((await page.evaluate(()=>window.pulseDesktop.updates.getState())).status,'downloaded');
   const finished=app.waitForEvent('close',{timeout:60000});
   await page.getByRole('button',{name:'Instalar e reiniciar',exact:true}).first().click();await finished;
