@@ -26,6 +26,14 @@ try {
  node scripts/test-live-update.cjs $exe verify
  if ($LASTEXITCODE -ne 0) { throw 'Versão/cadastros não foram preservados.' }
  Write-Output "PASS: atualização real 0.3.0 -> $version, instalação, reinício e preservação das empresas."
+ } catch {
+ $detail = $_.Exception.Message
+ if (Test-Path $exe) { $detail += ' ObservedVersion=' + (Get-Item $exe).VersionInfo.ProductVersion }
+ $paths = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like '*Pulse*' } | ForEach-Object { try { $_.Path } catch {} })
+ $detail += ' RunningPaths=' + ($paths -join ';') + ' ExpectedPath=' + $exe
+ $detail = $detail.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+ Write-Output "::error title=Native update diagnostics::$detail"
+ throw
 } finally {
  Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -eq $exe } catch { $false } } | Stop-Process -Force
  $uninstall = Join-Path $installDir 'Uninstall Pulse Analytics.exe'
