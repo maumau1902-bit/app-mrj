@@ -1,6 +1,6 @@
 # Pulse Analytics
 
-Aplicativo de análise empresarial para Windows, com identidade em vermelho e laranja. Versão de teste 0.2.0: empresas por abas, cadastros locais, indicadores demonstrativos e instalador de um clique.
+Aplicativo de análise empresarial para Windows, com identidade em vermelho e laranja. Versão de teste 0.3.1: empresas por abas, cadastros locais, indicadores demonstrativos e instalador de um clique.
 
 ## Desenvolvimento e testes
 
@@ -57,15 +57,15 @@ ELECTRON_CACHE=/workspace/.cache/electron ELECTRON_BUILDER_CACHE=/workspace/.cac
 
 Os instaladores locais de teste não têm assinatura digital; o Windows pode mostrar editor desconhecido. Compilação, estrutura e hashes são verificados aqui; a instalação e o reinício desta versão precisam de homologação no Windows. O usuário confirmou que a 0.1.1 abriu no seu Windows.
 
-## Atualizações internas
+## Atualizações internas (ativas desde 0.3.0)
 
-O motor NSIS/electron-updater está implementado: consulta ao abrir e a cada 30 minutos, aviso compacto, opção de adiar, verificação manual, progresso, interrupção do download, instalação escolhida pelo usuário e reinício. Não instala ao simplesmente fechar o app.
+O Windows instalado consulta o catálogo público assinado ao abrir e a cada 30 minutos. Permite aviso compacto, adiar, verificar manualmente, baixar, interromper, instalar e reiniciar. Não instala ao simplesmente fechar. No navegador e no Electron de desenvolvimento essa função permanece desabilitada por ser exclusiva do aplicativo instalado.
 
-O diferencial usa blocos `.blockmap`, não linhas de código. Pode baixar o pacote completo se o cache anterior ou um diferencial compatível não estiverem disponíveis. HTTPS, SHA-512 e verificação Authenticode permanecem ativos. No pacote sem assinatura o atualizador fica desativado, portanto **publicar uma versão no GitHub não atualiza automaticamente o aplicativo de teste instalado**.
+A confiança é Ed25519, com chave pública embutida e catálogo assinado contendo versão, plataforma, tamanho, URL fixa e SHA-512. A biblioteca electron-updater usa o provider customizado suportado, NSIS e diferenciais por blocos; não transmite tokens ou credenciais. A assinatura do catálogo é obrigatória antes de aceitar uma versão; o arquivo é conferido depois do download e novamente antes de executar o instalador, inclusive se veio do cache. Downgrade é recusado.
 
-`npm run test:differential -- <instalador-antigo.exe> <instalador-novo.exe>` reconstrói um pacote real por pedidos HTTP locais, verifica SHA-512 e confirma a rejeição de conteúdo adulterado. O HTTP é restrito ao teste. O tamanho transferido depende do par de pacotes e das opções de compressão. Essa verificação não substitui Authenticode nem instalação/reinício em Windows.
+A assinatura de atualização é independente do certificado Authenticode do Windows. A ausência deste certificado não desativa mais as atualizações assinadas Ed25519, mas o Windows ainda pode mostrar editor desconhecido na instalação manual. Se existe um editor Authenticode configurado, sua verificação também permanece ativa. Não desative TLS, checksums ou assinaturas para contornar falhas.
 
-Para distribuição assinada, configure no GitHub a variável `PULSE_PUBLISHER_NAME` e os secrets `CSC_LINK`/`CSC_KEY_PASSWORD`. Nunca coloque os valores no código ou no chat. `npm run release:win` exige essas configurações. O workflow Windows gera um pacote assinado quando configurado, ou um pacote de teste sem assinatura. Inclui verificação de artefatos e instalação/abertura/desinstalação em runner hospedado descartável. Não afirme que esses testes Windows passaram antes de observar o resultado do workflow.
+Versões até 0.2.0 exigem instalar a nova base manualmente uma vez. A partir de 0.3.0, novas publicações assinadas ficam disponíveis dentro do aplicativo. O download diferencial depende do cache e da compatibilidade dos pacotes; há fallback para download completo.
 
 ## Publicação automática autorizada
 
@@ -77,7 +77,7 @@ npm run publish:test
 
 Esse comando executa testes, gera/verifica o instalador e chama `scripts/publish-test.cjs`. O script salva o código com commit e push normal para main (sem force push), envia o binário por Git LFS na branch pulse-downloads preservando instaladores anteriores, publica uma prerelease com o link e baixa novamente os bytes para conferir SHA-256. Requer acesso Git/GitHub já configurado. Não inclui tokens no aplicativo.
 
-Os downloads públicos ficam em `https://github.com/maumau1902-bit/app-mrj/releases`. O executável usa um link direto para a branch de distribuição. Git LFS é usado porque a autenticação da API de anexos de Releases respondeu 401 neste ambiente. As versões de teste permanecem sem atualização remota até configurar o canal assinado.
+Os downloads públicos ficam em `https://github.com/maumau1902-bit/app-mrj/releases`. O executável usa um link direto para a branch de distribuição. Git LFS é usado porque a autenticação da API de anexos de Releases respondeu 401 neste ambiente. O canal assinado foi ativado a partir de 0.3.0; as versões antigas continuam exigindo uma instalação manual de migração.
 
 ## Canal de atualização autenticado (a partir da 0.3.0)
 
